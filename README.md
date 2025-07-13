@@ -1,5 +1,5 @@
-# amazon_price_tracker
-An automated Python-based tracker that monitors Amazon product prices and sends email notifications when prices drop below your set target.
+# E-Commerce_Price_Tracker
+An automated Python-based tracker that monitors product prices on Amazon and Microcenter, then sends email notifications when prices drop below your set target.
 Built with **Selenium**, **SQLite**, and scheduled using **cron** for continuous background execution.
 
 
@@ -7,7 +7,8 @@ Built with **Selenium**, **SQLite**, and scheduled using **cron** for continuous
 	– .env (variables to be edited by user)
     – cron_job_schedule_format.png (picture detailing the format of a cron job)
     – requirements.txt (to install required dependencies)
-    – scrap_amzn.py (the main program to track prices)
+    – scrap_amzn.py (the program that tracks prices on Amazon)
+    – scrap_microcntr.py (the program that tracks prices on Microcenter)
     – setup_db.py (first program to run that will create the database)
 
 
@@ -47,8 +48,9 @@ Built with **Selenium**, **SQLite**, and scheduled using **cron** for continuous
     – Linux/UNIX: python3 setup_db.py
     **Note**: You can set the target price higher than the current price, just to verify the code works as intended
     
-2. Next, run the scrap_amzn.py
-
+2. Next, run the scrap_amzn.py and the scrap_microcntr.py files
+    – Windows: python.exe scrap_amzn.py ; python3 scrap_microcntr.py
+    – Linux/UNIX: python3 scrap_amzn.py ; python3 scrap_microcntr.py
 
 **Setting up a cron job on a Linux environment with a shell script**
 1. First, make sure the project is on the Linux machine and a virtual environment is set
@@ -61,13 +63,14 @@ Built with **Selenium**, **SQLite**, and scheduled using **cron** for continuous
     #!/bin/bash
     source /full/path/to/project_directory/.venv/bin/activate
     python3 /full/path/to/project_directory/scrap_amzn.py
+    python3 /full/path/to/project_directory/scrap_microcntr.py
 
 5. Save and exit the file. Then, add executable permission to the file. e.g, `chmod +x track.sh`
 
 6. Make sure **crond** is enabled. Run `sudo systemstl status cron`
    – If it is not active, run `sudo systemctl enable cron` && `sudo systemctl start cron`.
 
-7. Now, run `crontab -e` and add a new cron job with this format:
+7. Now, run `crontab -e` to add a new cron job. You may get an initial prompt to select your desired file editor
     e.g., 00 12 * * * /full/path/to/your/tracker.sh
     The script will be executed at 12PM every day of the month, every month, every day of the week
 
