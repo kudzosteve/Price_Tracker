@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.options import Options
 
 DB_FILE = os.path.join(os.getcwd(), "products.db")
 
+""" Import environment variables """
 try:
     load_dotenv()
     smtp_addr = os.getenv("SMTP_ADDRESS")
@@ -17,23 +18,24 @@ try:
 except Exception as e:
     print(f"⚠️ Error: {e}")
 
+""" Retrieve data from the database """
 def fetch_db_data():
-    """ Retrieve data from the database """
+    # Connect to the database
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
-    results = cursor.execute("SELECT nickname, product_url, target_price FROM amzn_products")
+    results = cursor.execute("SELECT nickname, product_url, target_price FROM amazon_products")
 
     # Store the data in a list
     products_data = [r for r in results.fetchall()]
 
+    # Commit changes and disconnect from the database
     conn.commit()
     conn.close()
-    return products_data    # Return the list
+    return products_data  # Return the list of products
 
-def main(nickname:str, product_link:str, target_price:float):
-    """ Open browser, get product data from website, and send notification according to logic """
-
+""" Open browser, get product data from website, and send notification according to logic """
+def scrap_amazon(nickname: str, product_link: str, target_price: float):
     # 1. Start Chrome browser with headless behavior
     options = Options()
     options.add_argument("--headless")
@@ -47,16 +49,16 @@ def main(nickname:str, product_link:str, target_price:float):
     # 2. Fetch the name and current pricing of the product
     try:
         print("[*] Retrieving the name and current price of the product")
-        
+
         item_name = driver.find_element(By.ID, value="titleSection").text
         price_dollars = driver.find_element(By.CLASS_NAME, value="a-price-whole").text
         price_cents = driver.find_element(By.CLASS_NAME, value="a-price-fraction").text
-        current_price = float(f"{price_dollars}.{price_cents}")   # convert price to a floating number
+        current_price = float(f"{price_dollars}.{price_cents}")  # convert price to a floating number
 
-       # 3. Send an email if the price has dropped
+        # 3. Send an email if the price has dropped
         if current_price > target_price:
             print(f"[X] No lower price found for {nickname}. Moving on to next product if any.")
-        
+
         else:
             print(f"[*] {nickname} has a lower price. Sending notification...")
             message = f"Product: {item_name}\n \
@@ -80,16 +82,19 @@ def main(nickname:str, product_link:str, target_price:float):
         print(f"⚠️ Error: {e}")
 
     finally:
-        driver.quit()
+        driver.quit()  # Close the browser
 
+
+# Run the script
 if __name__ == "__main__":
     print("[*] Opening web browser...")
 
     products_data = fetch_db_data()
     for i in range(0, len(products_data)):
-        main(products_data[i][0],   # Product's nickname
-             products_data[i][1],   # Product URL
-             products_data[i][2]    # Product's target price
-        )
+        scrap_amazon(products_data[i][0],  # Product's nickname
+                     products_data[i][1],  # Product URL
+                     products_data[i][2]  # Product's target price
+                     )
         print()
+
     print("[*] Closing web browser.")
