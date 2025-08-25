@@ -22,7 +22,6 @@ def valid_url(product_url):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/;q=0.8'
     }
-
     # Check if the URL can be reached
     try:
         response = requests.get(url=product_url, headers=headers, timeout=5)
@@ -32,21 +31,21 @@ def valid_url(product_url):
 
 """ Functions that creates 'products' database to store items data """
 def create_db():
-    # Create a connection to the database
+    # Connect to the database
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
     # Create a table for Amazon products
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS amazon_products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nickname TEXT,
-        product_url TEXT NOT NULL UNIQUE,
-        target_price REAL NOT NULL
-    );
+        CREATE TABLE IF NOT EXISTS amazon_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nickname TEXT,
+            product_url TEXT NOT NULL UNIQUE,
+            target_price REAL NOT NULL
+        );
     """)
 
-    # Create a table for Microcenter products
+    # Create a table for Micro Center products
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS microcenter_products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +53,7 @@ def create_db():
             product_url TEXT NOT NULL UNIQUE,
             target_price REAL NOT NULL
         );
-        """)
+    """)
 
     # Commit changes and close the connection to the database
     conn.commit()
@@ -62,17 +61,16 @@ def create_db():
 
 """ Function that insert values into the tables of the database """
 def add_items(the_table:str, nickname:str, prod_url:str, target_price:float):
-    # Create a connection to the database
+    # Connect to the database
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
     try:
-        # Insert values to the table and commit changes to the database
         cursor.execute(f"INSERT INTO {the_table} (nickname, product_url, target_price) VALUES (?,?,?)",
                        (nickname, prod_url, target_price))
         conn.commit()
     except IntegrityError:
-        print(f"[X] Duplicate URL detected for {nickname}. Skipping...")
+        print(f"[X] Duplicate URL detected: {prod_url}.\nSkipping...")
     finally:
         conn.close()    # Close the connection
 
@@ -80,21 +78,22 @@ def add_items(the_table:str, nickname:str, prod_url:str, target_price:float):
 def update_database(the_table):
     # Create the database if it does not exist in current working directory
     print("[*] Setting up the database...")
-    if not os.path.isfile(DB_FILE):
+    if not os.path.exists(DB_FILE):
         create_db()
 
-    # use a continuous loop to receive user input
+    # ------------------------------ GET USER INPUT ------------------------------
     while True:
         # Get the number of products
         try:
             num_products = int(input("[?] How many products do you need to add to the database? "))
             break
-        except ValueError:
-            print("[X] Invalid input! Try again!")
+        except Exception:
+            raise ValueError("[X] Invalid input! Try again!")
 
     for n in range(1, num_products + 1):
         print(f"Product No. {n}")
 
+        # ------------------------------ GET THE URL ------------------------------
         while True:     # Get the URL
             url = input("[*] Paste the url of product: ")
             if valid_url(url):
@@ -102,54 +101,55 @@ def update_database(the_table):
             else:
                 print("[X] Invalid or unreachable URL. Please try again.")
 
-        while True:     # Get a price threshold
+        # ------------------------------ GET THE PRICE THRESHOLD ------------------------------
+        while True:
             try:
                 target_price = float(input("[*] Input your desired price: "))
                 break
-            except ValueError:
-                print("[X] Invalid price. Please enter a number.")
+            except Exception:
+                raise ValueError("[X] Invalid price. Please enter a number.")
 
-        # Get a nickname for the product
+        # ------------------------------ GET A NAME FOR PRODUCT ------------------------------
         nickname = input("[*] Set a nickname for your product (this will be used in the email's subject): ").title()
 
+        # ------------------------------ ADD ITEMS TO DATABASE ------------------------------
         add_items(the_table, nickname, url, target_price)
         print()
     print("[+] Database has been updated.")
 
 """ Function to execute all the functions """
-def execute_program():
+def main():
     run_code = True
     invalid_input = 3
 
+    # ------------------------------ GET THE MARKETPLACE ------------------------------
     while run_code:
         print("What marketplace products do you want to add?\n \
         [1] Amazon\n \
         [2] Microcenter")
         while True:     # Get the appropriate key for the right table
-            try:
-                table = input("Enter 1 or 2: ")
-                if table in ('1', '2'):
-                    break
+            table_index = input("Enter 1 or 2: ")
+            if table_index in ('1', '2'):
+                break
+
+            else:   # Limit invalid inputs to 3 attempts before exiting the program
+                invalid_input -= 1
+                if invalid_input != 0:
+                    print("[!] Invalid input. Please enter 1 or 2")
                 else:
-                    # Limit invalid inputs to 3 attempts before exiting the program
-                    invalid_input -= 1
-                    if invalid_input != 0:
-                        print("[!] Invalid input. Please enter 1 or 2")
-                    else:
-                        print("[] Three invalid inputs detected. Exiting program.")
-                        exit()
-                    continue
-            except ValueError:
-                print("[!] Invalid input. Try again")
+                    print("!!! Three invalid inputs detected. Exiting program.")
+                    exit()
+                continue
 
-        update_database(TABLES[table])      # Update the desired table in the database with new information
+        # ------------------------------ UPDATE SELECTED TABLE ------------------------------
+        update_database(TABLES[table_index])
 
-        # Should the program continue?
-        ask = input("[*] Do you want to add more items to a database? [y]es or [n]o: ")
+        ask = input("[*] Do you want to add more items to a database? [y]es or [n]o: ").lower()
         if ask in ("yes", "y"):
             continue
         else:
             run_code = False    # Stop code execution
 
+
 if __name__ == "__main__":
-    execute_program()
+    main()
