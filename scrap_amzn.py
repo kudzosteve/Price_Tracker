@@ -10,13 +10,10 @@ from selenium.webdriver.chrome.options import Options
 DB_FILE = os.path.join(os.getcwd(), "products.db")
 
 """ Import environment variables """
-try:
-    load_dotenv()
-    smtp_addr = os.getenv("SMTP_ADDRESS")
-    email_addr = os.getenv("EMAIL_ADDRESS")
-    email_passwd = os.getenv("EMAIL_PASSWORD")
-except Exception as e:
-    print(f"⚠️ Error: {e}")
+load_dotenv()
+smtp_addr = os.getenv("SMTP_ADDRESS")
+email_addr = os.getenv("EMAIL_ADDRESS")
+email_passwd = os.getenv("EMAIL_PASSWORD")
 
 """ Retrieve data from the database """
 def fetch_db_data():
@@ -27,7 +24,7 @@ def fetch_db_data():
     results = cursor.execute("SELECT nickname, product_url, target_price FROM amazon_products")
 
     # Store the data in a list
-    products_data = [r for r in results.fetchall()]
+    products_data = [result for result in results.fetchall()]
 
     # Commit changes and disconnect from the database
     conn.commit()
@@ -84,9 +81,8 @@ def scrap_amazon(nickname: str, product_link: str, target_price: float):
     finally:
         driver.quit()  # Close the browser
 
-
-# Run the script
-if __name__ == "__main__":
+""" Main program to be executed """
+def main():
     print("[*] Opening web browser...")
 
     products_data = fetch_db_data()
@@ -96,5 +92,9 @@ if __name__ == "__main__":
                      products_data[i][2]  # Product's target price
                      )
         print()
-
+        time.sleep(5)
     print("[*] Closing web browser.")
+
+
+if __name__ == "__main__":
+    main()
