@@ -1,77 +1,91 @@
-# E-Commerce_Price_Tracker
-An automated Python-based tracker that monitors product prices on Amazon and Microcenter, then sends email notifications when prices drop below your set target.
-Built with **Selenium**, **SQLite**, and scheduled using **cron** for continuous background execution.
+# Price Tracker
 
+A simple Python tool to track product prices on **Amazon** and **Micro Center**
 
-**Folder contains:**
-	– .env (variables to be edited by user)
-    – cron_job_schedule_format.png (picture detailing the format of a cron job)
-    – requirements.txt (to install required dependencies)
-    – scrap_amzn.py (the program that tracks prices on Amazon)
-    – scrap_microcntr.py (the program that tracks prices on Microcenter)
-    – setup_db.py (first program to run that will create the database)
+## Features
+- Add products URL's with a target price
+- Store product details in a SQLite database
+- Scrape current price using Selenium
+- Send email alerts when prices drop
 
+## Requirements
+- Python 3.9+
+- Google Chrome
 
-**Requirements**
-	– Python 3.9+
-	– Google Chrome, Microsoft Edge, or Safari (with remote automation allowed)
-	– Environment variables (.env file)
+### Python Dependencies
+Install them with:
+```dockerignore
+pip install -r requirements.txt
+```
 
+## Setup
+1. Clone the repository and navigate to it
+2. Open the .env file and add your email details
+```dockerignore
+SMTP_ADDRESS="smtp.yourmail.com"
+EMAIL_ADDRESS="youremail@gmail.com"
+EMAIL_PASSWORD="yourapppassword"
+```
+- Note: In this project, one email serves as both the sender and the receiver.
+3. To create an app password:
+- Log into your Google account and make sure you have 2FA enabled
+- In the search bar, type app password
+![App Passwords](/images/App_Passwords_Screenshot.png)
+- Click on _App passwords_, enter a name for your app, and click "Create"
+- A 16-character password will be generated. Copy and paste it to **EMAIL_PASSWORD**
 
-**How to set up environment variable**
-    **Note**: this will not work unless you have Multi-Factor Authentication (MFA) enabled for your account
-    – In this project, we use the same email address as both the sender and the receiver
-    – Log into your Google account and navigate to the Security Tab
-    – In the Search bar, type "app" and click on "App passwords". You may need to enter your password
-    – Give a name to your app and click "Create". A 16-character unique password will be generated
-    – Copy the generated password and paste it into the .env file as the EMAIL_PASSWORD variable
-	– Add your email address in the .env file as the EMAIL_ADDRESS variable
+## Usage
+1. Add products to database
+Run:
+```dockerignore
+python setup_db.py
+```
+- Choose your marketplace (Amazon, Micro Center)
+- Enter product URL, target price, and a nickname
+2. Run trackers
+Run one of these:
+```dockerignore
+python scrap_amazn.py
+```
+or
+```dockerignore
+python scrap_microcntr.py
+```
+The script will:
+- Open the product page in a headless browser
+- Compare the current price with your target price
+- Send an email if the current price matches or is lower than the target price
 
+## Notes
+- Database: `products.db`
+- Tables: `amazon_products`, `microcenter_products`
+- Duplicate URLs are skipped
 
-**Command-line installation**
-1. Create a virtual environment
-    – Windows: python.exe -m venv .venv
-    – Linux/UNIX: python3 -m venv .venv
-
-2. Activate the virtual environment
-    – Windows: .venv\Scripts\activate
-    – Linux/UNIX: source .venv/bin/activate
-    
-3. Install dependencies
-    – Windows: python.exe -m pip install -r requirements.txt
-    – Linux/UNIX: python3 -m pip install -r requirements.txt
-
-
-**Set up the database**
-1. Run setup_db.py and input the URL of your product, your target price, and a nickname for your product 
-    – Windows: python.exe setup_db.py
-    – Linux/UNIX: python3 setup_db.py
-    **Note**: You can set the target price higher than the current price, just to verify the code works as intended
-    
-2. Next, run the scrap_amzn.py and the scrap_microcntr.py files
-    – Windows: python.exe scrap_amzn.py ; python3 scrap_microcntr.py
-    – Linux/UNIX: python3 scrap_amzn.py ; python3 scrap_microcntr.py
-
-**Setting up a cron job on a Linux environment with a shell script**
-1. First, make sure the project is on the Linux machine and a virtual environment is set
-
-2. Create a shell script file. e.g., `touch track.sh`
-
-3. Open the script in your file editor: `nano track.sh` OR `vim track.sh`
-
-4. Add the following lines to the file.
-    #!/bin/bash
-    source /full/path/to/project_directory/.venv/bin/activate
-    python3 /full/path/to/project_directory/scrap_amzn.py
-    python3 /full/path/to/project_directory/scrap_microcntr.py
-
-5. Save and exit the file. Then, add executable permission to the file. e.g, `chmod +x track.sh`
-
-6. Make sure **crond** is enabled. Run `sudo systemstl status cron`
-   – If it is not active, run `sudo systemctl enable cron` && `sudo systemctl start cron`.
-
-7. Now, run `crontab -e` to add a new cron job. You may get an initial prompt to select your desired file editor
-    e.g., 00 12 * * * /full/path/to/your/tracker.sh
-    The script will be executed at 12PM every day of the month, every month, every day of the week
-
-8. Check the cron job image file for more details.
+## Linux Cron Job
+1. Create a shell script and give it **Execute** permission
+```dockerignore
+touch tracker.sh
+chmod +x tracker.sh
+```
+Add a shebang line to the script based on the running shell (bash, zsh):
+```dockerignore
+echo \#\!$SHELL >> tracker.sh 
+```
+2. Open the shell script and add these lines:
+```dockerignore
+source /full/path/to/project_directory/.venv/bin/activate   # activate python's virtual environment
+python3 /full/path/to/project_directory/scrap_amzn.py       # run the Amazon tracker script
+python3 /full/path/to/project_directory/scrap_microcntr.py  # run the Micro Center tracker script
+```
+Save changes and exit.
+3. Ensure the cron daemon is installed and enabled. Run:
+```dockerignore
+crontab -e
+```
+You may be prompted to select your desired text editor. Then, add a new job:
+```dockerignore
+00 12 * * * /full/path/to/your/tracker.sh
+```
+In the above example, the script will be executed at 12PM every day of the month, every month, every day of the week
+4. Learn more about the crontab syntax below:
+![Crontab Syntax](images/cron_job_schedule_format.png)
