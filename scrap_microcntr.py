@@ -81,8 +81,7 @@ def scrap_microcenter(nickname:str, product_link:str, target_price:float):
     finally:
         driver.quit()   # Close the browser
 
-""" Main program to be executed """
-def main():
+if __name__ == "__main__":
     print("[*] Opening web browser...")
 
     products_data = fetch_db_data()
@@ -94,7 +93,3 @@ def main():
         print()
         time.sleep(5)
     print("[*] Closing web browser.")
-
-
-if __name__ == "__main__":
-    main()
